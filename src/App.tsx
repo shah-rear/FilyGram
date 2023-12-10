@@ -7,6 +7,7 @@ import Signupform from './_auth/forms/Signupform'
 import Authlayout from './_auth/Authlayout'
 import Rootlayout from './_root/Rootlayout'
 
+
 const App = () => {
   return (
     <main className='flex h-screen'>
@@ -15,7 +16,7 @@ const App = () => {
         {/* public routes */}
         <Route element={<Authlayout/>} >
           <Route path='/sign-in' element = {<Signinform/>} />
-          <Route path='/sign-in' element = {<Signupform/>} />
+          <Route path='/sign-up' element = {<Signupform/>} />
         </Route>
         
         {/* private routes */}
