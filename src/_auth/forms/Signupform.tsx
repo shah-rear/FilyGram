@@ -13,17 +13,25 @@ import {
 import { Input } from "@/components/ui/input";
 import { SignupValidation } from "@/lib/validation";
 import Loader from "@/components/shared/Loader";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 // import { createUserAccount } from "@/lib/appwrite/api";
-import { useToast } from "@/components/ui/use-toast"
-import { useCreateUserAccount } from "@/lib/react-query/queriesAndMutations";
-
+import { useToast } from "@/components/ui/use-toast";
+import {
+  useCreateUserAccount,
+  useSignInAccount,
+} from "@/lib/react-query/queriesAndMutations";
 
 const Signupform = () => {
-  const { toast } = useToast()
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const { checkAuthUser, isLoading: isUserLoading } = useUserContext();
   // const isLoading = false;
 
-  const { mutateAsync: createUserAccount, isPending:isCreatingUser } = useCreateUserAccount();
+  const { mutateAsync: createUserAccount, isPending: isCreatingAccount } =
+    useCreateUserAccount();
+
+  const { mutateAsync: signInAccount, isPending: isSigningIn } =
+    useSignInAccount();
 
   // 1. Define your form.
   const form = useForm<z.infer<typeof SignupValidation>>({
@@ -38,13 +46,38 @@ const Signupform = () => {
 
   // 2. Define a submit handler.
   async function onSubmit(values: z.infer<typeof SignupValidation>) {
-    const newUser = await createUserAccount(values);
+    try {
+      const newUser = await createUserAccount(values);
 
-    console.log(newUser);
-    if(!newUser) {
-      return toast({title: "Sign up failed, try again"})
+      console.log(newUser);
+      if (!newUser) {
+        return toast({ title: "Sign up failed, try again" });
+      }
+      const session = await signInAccount({
+        email: values.email,
+        password: values.password,
+      });
+
+      if (!session) {
+        toast({ title: "Sign in failed, try again" });
+        navigate("/sign-in");
+        return;
+      }
+
+      const isLoggedIn = await checkAuthUser();
+
+      if (isLoggedIn) {
+        form.reset();
+
+        navigate("/");
+      } else {
+        toast({ title: "Login failed. Please try again." });
+
+        return;
+      }
+    } catch (error) {
+      console.log({ error });
     }
-    // const session = await signInAccount();
   }
 
   return (
@@ -69,9 +102,12 @@ const Signupform = () => {
               <FormItem>
                 <FormLabel className="shad-form_label">Name</FormLabel>
                 <FormControl>
-                  <Input type="text" 
-                  placeholder="Enter your name"
-                  className="shad-input" {...field} />
+                  <Input
+                    type="text"
+                    placeholder="Enter your name"
+                    className="shad-input"
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -85,9 +121,12 @@ const Signupform = () => {
               <FormItem>
                 <FormLabel className="shad-form_label">Username</FormLabel>
                 <FormControl>
-                  <Input type="text"
-                  placeholder="Enter username"
-                  className="shad-input" {...field} />
+                  <Input
+                    type="text"
+                    placeholder="Enter username"
+                    className="shad-input"
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -101,9 +140,12 @@ const Signupform = () => {
               <FormItem>
                 <FormLabel className="shad-form_label">Email</FormLabel>
                 <FormControl>
-                  <Input type="text"
-                  placeholder="Enter Email"
-                  className="shad-input" {...field} />
+                  <Input
+                    type="text"
+                    placeholder="Enter Email"
+                    className="shad-input"
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -117,16 +159,19 @@ const Signupform = () => {
               <FormItem>
                 <FormLabel className="shad-form_label">Password</FormLabel>
                 <FormControl>
-                  <Input type="password" 
-                  placeholder="Set Password : at least 8 chars"
-                  className="shad-input" {...field} />
+                  <Input
+                    type="password"
+                    placeholder="Set Password : at least 8 chars"
+                    className="shad-input"
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
           <Button type="submit" className="shad-button_primary">
-            {isCreatingUser ? (
+            {isCreatingAccount ? (
               <div className="flex-center gap-2">
                 <Loader /> Loading...
               </div>
@@ -139,7 +184,8 @@ const Signupform = () => {
             Already have an account?
             <Link
               to="/sign-in"
-              className="text-primary-500 text-small-semibold ml-1">
+              className="text-primary-500 text-small-semibold ml-1"
+            >
               Log in
             </Link>
           </p>
