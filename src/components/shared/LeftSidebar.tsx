@@ -1,9 +1,9 @@
 import React from 'react'
 
-const LeftSidebar = () => {
+const Leftsidebar = () => {
   return (
     <div>Leftsidebar</div>
   )
 }
 
-export default LeftSidebar
+export default Leftsidebar
